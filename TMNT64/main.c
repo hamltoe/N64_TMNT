@@ -9,6 +9,7 @@
 #include "ECS/Components/DisplaySettings.h"
 #include "ECS/ComponentsManager.h"
 #include "ECS/SystemsManager.h"
+#include "ECS/Components/Scene.h"
 #include "ECS/Components/Controller.h"
 #include "ECS/Components/Animation_Mesh_Skeletal.h"
 #include "ECS/Components/Controller.h"
@@ -55,6 +56,14 @@ int main(void) {
     model = t3d_model_load("rom:/snake.t3dm");
 
     // === ECS Init ===
+
+       //Test entity
+    EntityID entity = { .ID = 1, .instanceIndex = 0 };
+
+    controller_component_spawn(&inputPool, INPUT_SOURCE_PLAYER, entity);
+    // Add a test entity with an AnimationComponent
+    animation_component_spawn(&animPool, entity);
+
     SystemsManager systems;
     systems_manager_init(&systems);
     ComponentPool inputPool;
@@ -84,24 +93,37 @@ int main(void) {
     };
     component_pool_add(&cameraPool, &cam);
 
+    systems_manager_add(&systems, InputSystem);    // 0: inputPool
+    systems_manager_add(&systems, AnimationSystem);// 1: animPool
+    systems_manager_add(&systems, MovementSystem); // 2: inputPool + transformPool
+    systems_manager_add(&systems, RenderSystem);   // 3: animPool + transformPool
 
-    systems_manager_add(&systems, InputSystem);
-    systems_manager_add(&systems, AnimationSystem);
-    systems_manager_add(&systems, MovementSystem);
-    systems_manager_add(&systems, RenderSystem);
+    ComponentPool scenePool;
+    component_pool_init(&scenePool, sizeof(SceneComponent));
 
+    SceneComponent scene = {
+        .currentScene = SCENE_MENU,
+        .nextScene = SCENE_MENU,
+        .isTransitioning = false
+    };
+    component_pool_add(&scenePool, &scene);
+
+    systems_manager_add(&systems, SceneSystem); // Register system
+
+    //Make sure the system registration order and pool index order match.
     ComponentPool* systemPools[MAX_SYSTEMS] = {
-        &inputPool,
-        &animPool,
-        &transformPool,
-        &cameraPool,
+        (ComponentPool*[]){&inputPool, &transformPool}, // MovementSystem
+        (ComponentPool*[]){&animPool, &transformPool},  // RenderSystem
+        &animPool,                        // AnimationSystem
+        &cameraPool,                      // CameraSystem
+        &scenePool,                       // <--- Scene System slot
         NULL,
         NULL,
     };
 
-    // Add a test entity with an AnimationComponent
-    EntityID entity = { .ID = 1, .instanceIndex = 0 };
-    animation_component_spawn(&animPool, entity);
+
+
+ 
 
     float lastTime = get_time_s() - (1.0f / 60.0f);
 

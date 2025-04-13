@@ -20,4 +20,13 @@ void InputSystem(ComponentPool* pool, float deltaTime) {
             controller_input_set_ai(input, 0.0f, 0.0f, false);
         }
     }
+
+    /*
+    SceneComponent* scene = (SceneComponent*)scenePool.components[0];
+    if (input->state.button_start && !scene->isTransitioning) {
+        scene->nextScene = SCENE_GAME;
+        scene->isTransitioning = true;
+    }
+    */
+
 }

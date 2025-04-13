@@ -35,7 +35,10 @@ void RenderSystem_Init(void) {
     });
 }
 
-void RenderSystem(ComponentPool* pool, float deltaTime) {
+void RenderSystem(ComponentPool** pools, float deltaTime) {
+    ComponentPool* animPool = pools[0];
+    ComponentPool* transformPool = pools[1];
+
     rdpq_attach(display_get(), display_get_zbuf());
     t3d_frame_start();
     t3d_viewport_attach(&viewport);
@@ -52,34 +55,25 @@ void RenderSystem(ComponentPool* pool, float deltaTime) {
     t3d_light_set_directional(0, colorDir, &lightDirVec);
     t3d_light_set_count(1);
 
-    // Draw the map
+    // Draw static map
     t3d_matrix_push(mapMatFP);
     rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
     t3d_model_draw(modelMap);
     t3d_matrix_pop(1);
 
-    // Draw each animated entity
-    for (int i = 0; i < pool->count; i++) {
-        AnimationComponent* anim = (AnimationComponent*)pool->components[i];
+    // Draw animated entities
+    for (int i = 0; i < animPool->count; i++) {
+        AnimationComponent* anim = (AnimationComponent*)animPool->components[i];
+        TransformComponent* transform = (TransformComponent*)transformPool->components[i];
 
-        // TEMP: hardcoded model matrix – you’ll want to use a TransformComponent later
-        t3d_mat4fp_from_srt_euler(modelMatFP,
-            (float[3]) {
-            0.125f, 0.125f, 0.125f
-        },
-            (float[3]) {
-            0.0f, 0.0f, 0.0f
-        },
-            (float[3]) {
-            0.0f, 0.0f, 0.0f
-        });
-
-        t3d_matrix_push(modelMatFP);
+        // Use transform matrix
+        t3d_matrix_push(&transform->matrix);
         rdpq_set_prim_color(RGBA32(255, 255, 255, 255));
         t3d_model_draw_skinned(model, anim->skeleton);
         t3d_matrix_pop(1);
 
-        t3d_matrix_push(modelMatFP);
+        // Shadow
+        t3d_matrix_push(&transform->matrix);
         rdpq_set_prim_color(RGBA32(0, 0, 0, 120));
         t3d_model_draw(modelShadow);
         t3d_matrix_pop(1);
@@ -87,6 +81,7 @@ void RenderSystem(ComponentPool* pool, float deltaTime) {
 
     rdpq_detach_show();
 }
+
 
 /*
 
