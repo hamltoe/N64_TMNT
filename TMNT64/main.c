@@ -22,14 +22,10 @@ float get_time_s() {
 
 T3DViewport viewport;
 
-
-void MovementSystem(ComponentPool* pool, float deltaTime) {
-    // Stub: apply input to transform and animation states
-}
-
-void RenderSystem(ComponentPool* pool, float deltaTime) {
-    // Stub: draw model using current skeleton pose
-}
+//Store pools or references globally, or manage them in a SceneContext struct that passes all pools around. For now, you can do:
+ComponentPool* globalAnimPool;
+ComponentPool* globalTransformPool;
+EntityID globalPlayerID;
 
 int main(void) {
     debug_init_isviewer();
@@ -121,6 +117,15 @@ int main(void) {
         NULL,
     };
 
+    SceneComponent scene = {
+    .currentScene = SCENE_MENU,
+    .nextScene = SCENE_MENU,
+    .isTransitioning = false,
+    .transitionState = TRANSITION_NONE,
+    .transitionTimer = 0,
+    .fadeAlpha = 0,
+    .fadeDuration = 1.0f
+    };
 
 
  
@@ -133,10 +138,21 @@ int main(void) {
         float deltaTime = now - lastTime;
         lastTime = now;
 
-        inputPool.count = 0;
+        if (sceneManager.transition && sceneManager.next) {
+            if (sceneManager.current && sceneManager.current->unload)
+                sceneManager.current->unload();
 
-        systems_manager_update(&systems, deltaTime, systemPools);
+            sceneManager.current = sceneManager.next;
+            sceneManager.transition = false;
 
+            if (sceneManager.current->init)
+                sceneManager.current->init();
+        }
+
+        if (sceneManager.current) {
+            sceneManager.current->update(dt);
+            sceneManager.current->draw();
+        }
     }
 
     return 0;

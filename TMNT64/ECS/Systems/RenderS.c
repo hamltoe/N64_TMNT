@@ -80,7 +80,22 @@ void RenderSystem(ComponentPool** pools, float deltaTime) {
     }
 
     rdpq_detach_show();
+
+    //FadeScene on transition
+    SceneComponent* scene = (SceneComponent*)scenePool->components[0];
+    if (scene->transitionState != TRANSITION_NONE) {
+        draw_scene_fade(scene->fadeAlpha);
+    }
+
 }
+
+
+void draw_scene_fade(float alpha) {
+    rdpq_set_mode_standard();
+    rdpq_set_prim_color(rgba32(0, 0, 0, (int)(alpha * 255.0f)));
+    rdpq_fill_rectangle(0, 0, display_get_width(), display_get_height());
+}
+
 
 
 /*
