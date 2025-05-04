@@ -1,3 +1,4 @@
+//This is a player controller component. It handles user or AI input in order to control a possessed character.
 #pragma once
 
 #include <libdragon.h>
